@@ -9,7 +9,6 @@ package current
 
 import (
 	"fmt"
-
 	"github.com/pkg/errors"
 
 	"gitlab.com/elixxir/primitives/states"
