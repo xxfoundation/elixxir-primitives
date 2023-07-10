@@ -49,6 +49,6 @@ func (r Round) String() string {
 	case FAILED:
 		return "FAILED"
 	default:
-		return fmt.Sprintf("UNKNOWN STATE: %d", s)
+		return fmt.Sprintf("UNKNOWN STATE: %d", r)
 	}
 }
