@@ -8,7 +8,7 @@
 package states
 
 import (
-	"strconv"
+	"fmt"
 )
 
 // This holds the enum for the states of a round. It is in primitives so

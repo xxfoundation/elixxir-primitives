@@ -12,7 +12,7 @@ import "testing"
 // Consistency test of Round.String.
 func TestRound_String(t *testing.T) {
 	expected := []string{"PENDING", "PRECOMPUTING", "STANDBY", "QUEUED",
-		"REALTIME", "COMPLETED", "FAILED", "UNKNOWN ACTIVITY: 7"}
+		"REALTIME", "COMPLETED", "FAILED", "UNKNOWN STATE: 7"}
 
 	for st := PENDING; st <= NUM_STATES; st++ {
 		if st.String() != expected[st] {
