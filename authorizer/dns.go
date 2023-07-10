@@ -23,10 +23,10 @@ const (
 	maxGwIdLength = maxLength - len(DomainName) - 1
 )
 
-// GetGatewayDns returns the DNS name for the given marshalled GwId.
-// Truncates
-func GetGatewayDns(gwId []byte) string {
-	encoded := hex.EncodeToString(gwId)
+// GetGatewayDns returns the DNS name for the given marshalled gateway ID.
+// Strips the domain name, if it exists, from the encoded ID.
+func GetGatewayDns(gwID []byte) string {
+	encoded := hex.EncodeToString(gwID)
 	if len(encoded) > maxGwIdLength {
 		encoded = encoded[:maxGwIdLength]
 	}

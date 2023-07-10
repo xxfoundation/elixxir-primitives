@@ -29,8 +29,8 @@ func (fl FactList) Stringify() string {
 	return strings.Join(stringList, factDelimiter) + factBreak
 }
 
-// unstrignifys facts followed by a facts break and with arbatrary data
-// atttached at the end
+// UnstringifyFactList unstringifies facts followed by a facts break and with
+// arbitrary data attached at the end.
 func UnstringifyFactList(s string) (FactList, string, error) {
 	parts := strings.SplitN(s, factBreak, 2)
 	if len(parts) != 2 {
@@ -42,8 +42,7 @@ func UnstringifyFactList(s string) (FactList, string, error) {
 	for _, fString := range factStrings {
 		fact, err := UnstringifyFact(fString)
 		if err != nil {
-			jww.WARN.Printf("Fact failed to unstringify, dropped: %s",
-				err)
+			jww.WARN.Printf("Fact failed to unstringify, dropped: %s", err)
 		} else {
 			factList = append(factList, fact)
 		}

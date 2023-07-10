@@ -8,11 +8,11 @@
 package fact
 
 import (
-	"fmt"
+	"strings"
+
 	"github.com/badoux/checkmail"
 	"github.com/pkg/errors"
 	"github.com/ttacon/libphonenumber"
-	"strings"
 )
 
 // maxFactCharacterLimit is the maximum character length of a fact.
@@ -22,10 +22,11 @@ const maxFactCharacterLimit = 64
 // be JSON marshalled and unmarshalled.
 //
 // JSON example:
-//  {
-//    "Fact": "john@example.com",
-//    "T": 1
-//  }
+//
+//	{
+//	  "Fact": "john@example.com",
+//	  "T": 1
+//	}
 type Fact struct {
 	Fact string   `json:"Fact"`
 	T    FactType `json:"T"`
@@ -35,7 +36,6 @@ type Fact struct {
 // fact type. If so, it returns a new fact object. If not, it returns a
 // validation error.
 func NewFact(ft FactType, fact string) (Fact, error) {
-
 	if len(fact) > maxFactCharacterLimit {
 		return Fact{}, errors.Errorf("Fact (%s) exceeds maximum character limit"+
 			"for a fact (%d characters)", fact, maxFactCharacterLimit)
@@ -52,7 +52,8 @@ func NewFact(ft FactType, fact string) (Fact, error) {
 	return f, nil
 }
 
-// marshal is for transmission for UDB, not a part of the fact interface
+// Stringify marshals the Fact for transmission for UDB. It is not a part of the
+// fact interface.
 func (f Fact) Stringify() string {
 	return f.T.Stringify() + f.Fact
 }
@@ -80,14 +81,14 @@ func UnstringifyFact(s string) (Fact, error) {
 	}
 	ft, err := UnstringifyFactType(T)
 	if err != nil {
-		return Fact{}, errors.WithMessagef(err, "Failed to unstringify fact type for %q", s)
+		return Fact{}, errors.WithMessagef(err,
+			"Failed to unstringify fact type for %q", s)
 	}
 
 	return NewFact(ft, fact)
 }
 
-// Take the fact passed in and checks the input to see if it
-//  valid based on the type of fact it is
+// ValidateFact checks the fact to see if it valid based on its type.
 func ValidateFact(fact Fact) error {
 	switch fact.T {
 	case Username:
@@ -107,7 +108,7 @@ func ValidateFact(fact Fact) error {
 	}
 }
 
-// Numbers are assumed to have the 2 letter country code appended
+// Numbers are assumed to have the 2-letter country code appended
 // to the fact, with the rest of the information being a phone number
 // Example: 6502530000US is a valid US number with the country code
 // that would be the fact information for a phone number
@@ -122,7 +123,8 @@ func extractNumberInfo(fact string) (number, countryCode string) {
 func validateEmail(email string) error {
 	// Check that the input is validly formatted
 	if err := checkmail.ValidateFormat(email); err != nil {
-		return errors.Errorf("Could not validate format for email [%s]: %v", email, err)
+		return errors.Errorf(
+			"Could not validate format for email [%s]: %v", email, err)
 	}
 
 	return nil
@@ -159,7 +161,8 @@ func validateNumber(number, countryCode string) error {
 
 func validateNickname(nickname string) error {
 	if len(nickname) < 3 {
-		return errors.New(fmt.Sprintf("Could not validate nickname %s: too short (< 3 characters)", nickname))
+		return errors.Errorf("Could not validate nickname %s: "+
+			"too short (< 3 characters)", nickname)
 	}
 	return nil
 }

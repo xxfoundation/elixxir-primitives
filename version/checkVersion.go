@@ -5,7 +5,9 @@
 // LICENSE file.                                                              //
 ////////////////////////////////////////////////////////////////////////////////
 
-// The version for an entity is composed of a major version , minor version, and
+// Package version describes a version used for a repository.
+//
+// The version for an entity is composed of a major version, minor version, and
 // patch. The major and minor version numbers are both integers and dictate the
 // compatibility between two versions. The patch provides extra information that
 // is not part of the compatibility check, but still must be present.
@@ -77,13 +79,15 @@ func ParseVersion(versionString string) (Version, error) {
 	// Check that the major version is an integer
 	version.major, err = strconv.Atoi(versionParts[0])
 	if err != nil {
-		return Version{}, errors.Errorf("expected integer for major version: %+v", err)
+		return Version{},
+			errors.Errorf("expected integer for major version: %+v", err)
 	}
 
 	// Check that the minor version is an integer
 	version.minor, err = strconv.Atoi(versionParts[1])
 	if err != nil {
-		return Version{}, errors.Errorf("expected integer for minor version: %+v", err)
+		return Version{},
+			errors.Errorf("expected integer for minor version: %+v", err)
 	}
 
 	// Check that the patch is not empty

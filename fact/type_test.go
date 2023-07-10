@@ -17,7 +17,8 @@ func TestFactType_String(t *testing.T) {
 	Strs := []string{"Username", "Email", "Phone", "Unknown Fact FactType: 200"}
 	for i, ft := range FTs {
 		if FactType.String(ft) != Strs[i] {
-			t.Errorf("Got unexpected string for FactType.\n\tGot: %s\n\tExpected: %s", FactType.String(ft), Strs[i])
+			t.Errorf("Unexpected FactType string.\nexpected: %s\nreceived: %s",
+				Strs[i], FactType.String(ft))
 		}
 	}
 }
@@ -28,7 +29,8 @@ func TestFactType_Stringify(t *testing.T) {
 	Strs := []string{"U", "E", "P"}
 	for i, ft := range FTs {
 		if FactType.Stringify(ft) != Strs[i] {
-			t.Errorf("Got unexpected string for FactType.\n\tGot: %s\n\tExpected: %s", FactType.Stringify(ft), Strs[i])
+			t.Errorf("Unexpected stringified FactType.\nexpected: %s\nreceived: %s",
+				Strs[i], FactType.Stringify(ft))
 		}
 	}
 }
@@ -43,7 +45,8 @@ func TestFactType_Unstringify(t *testing.T) {
 			t.Error(err)
 		}
 		if gotft != ft {
-			t.Errorf("Got unexpected string for FactType.\n\tGot: %s\n\tExpected: %s", FactType.Stringify(ft), Strs[i])
+			t.Errorf("Unexpected unstringified FactType."+
+				"\nexpected: %s\nreceived: %s", ft, gotft)
 		}
 	}
 
