@@ -16,8 +16,10 @@ const (
 	// DomainName is the registered domain to be used for calculation of
 	// unique Gateway DNS addresses by authorizer, gateway, and client.
 	DomainName = "xxnode.io"
+
 	// Maximum length of DNS name. Determined by third party service.
 	maxLength = 64
+
 	// Maximum number of characters of gateway ID to use. Subtract length of
 	// domain plus the additional period from maxLength.
 	maxGwIdLength = maxLength - len(DomainName) - 1

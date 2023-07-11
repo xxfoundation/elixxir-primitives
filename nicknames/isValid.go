@@ -20,8 +20,8 @@ var ErrNicknameTooLong = errors.Errorf("nicknames must be %d "+
 // Rules:
 //   - A nickname must not be longer than 24 characters.
 //   - A nickname must not be shorter than 1 character.
-//   - A nickname may be blank, this will be treated by the system as
-//     no nickname
+//   - If a nickname is blank (empty string), then it will be treated by the
+//     system as no nickname.
 //
 // TODO: Add character filtering.
 func IsValid(nick string) error {
@@ -30,6 +30,7 @@ func IsValid(nick string) error {
 			"nickname")
 		return nil
 	}
+
 	runeNick := []rune(nick)
 	if len(runeNick) < MinNicknameLength {
 		return errors.WithStack(ErrNicknameTooShort)

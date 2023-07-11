@@ -10,38 +10,35 @@ package notifications
 import (
 	"math/rand"
 	"reflect"
+	"strings"
 	"testing"
-	"time"
 )
 
-func TestMake_DecodeNotificationsCSV(t *testing.T) {
-
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-
-	const numNotifications = 45
-
-	notifList := make([]*Data, numNotifications)
-
-	for i := range notifList {
-		msgHash := make([]byte, 32)
-		ifp := make([]byte, 25)
-		rng.Read(msgHash)
-		rng.Read(ifp)
-		notifList[i] = &Data{MessageHash: msgHash, IdentityFP: ifp}
+// Tests that a list of Data CSV encoded by BuildNotificationCSV and decoded bu
+// DecodeNotificationsCSV matches the original.
+func TestBuildNotificationCSV_DecodeNotificationsCSV(t *testing.T) {
+	rng := rand.New(rand.NewSource(186745))
+	expected := make([]*Data, 50)
+	for i := range expected {
+		identityFP, messageHash := make([]byte, 25), make([]byte, 32)
+		rng.Read(messageHash)
+		rng.Read(identityFP)
+		expected[i] = &Data{IdentityFP: identityFP, MessageHash: messageHash}
 	}
 
-	notifCSV, _ := BuildNotificationCSV(notifList, 4096)
-	newNotifList, err := DecodeNotificationsCSV(string(notifCSV))
-
+	csvData, _ := BuildNotificationCSV(expected, 9999)
+	dataList, err := DecodeNotificationsCSV(string(csvData))
 	if err != nil {
-		t.Error(err)
+		t.Errorf("Failed to decode notifications CSV: %+v", err)
 	}
 
-	if !reflect.DeepEqual(notifList, newNotifList) {
-		t.Errorf("The generated notifivations do not match")
+	if !reflect.DeepEqual(expected, dataList) {
+		t.Errorf("The generated Data list does not match the original."+
+			"\nexpected: %v\nreceived: %v", expected, dataList)
 	}
 }
 
+// Consistency test of BuildNotificationCSV.
 func TestBuildNotificationCSV(t *testing.T) {
 	expected := `U4x/lrFkvxuXu59LtHLon1sUhPJSCcnZND6SugndnVI=,39ebTXZCm2F6DJ+fDTulWwzA1hRMiIU1hA==
 GsvgcJsHWAg/YdN1vAK0HfT5GSnhj9qeb4LlTnSOgec=,nku9b+NM3LqEPujWPoxP/hzr6lRtj6wT3Q==
@@ -96,23 +93,16 @@ A3hMWMAcrvqWoVNZPxQqYFWLMoCUCnrl2NArseYXnTk=,WsPBzNwVH8QF0fcpHDoq7po6JHhgL9Zcew=
 	extra := "Zq3/Nor7+NgAzkvg7LxVOYyRMMnAEDxkHpGnKpeHltc=,wGc+G+CLk/qEIoGMQ0XBZlyHkiYS3r7nkw==\n"
 
 	rng := rand.New(rand.NewSource(42))
-
-	const numNotifications = 50
-
-	notifList := make([]*Data, numNotifications)
-
-	for i := range notifList {
-		msgHash := make([]byte, 32)
-		ifp := make([]byte, 25)
-		rng.Read(msgHash)
-		rng.Read(ifp)
-		notifList[i] = &Data{MessageHash: msgHash, IdentityFP: ifp}
+	dataList := make([]*Data, 50)
+	for i := range dataList {
+		identityFP, messageHash := make([]byte, 25), make([]byte, 32)
+		rng.Read(messageHash)
+		rng.Read(identityFP)
+		dataList[i] = &Data{IdentityFP: identityFP, MessageHash: messageHash}
 	}
 
-	csv, rest := BuildNotificationCSV(notifList, 4096)
-
+	csv, rest := BuildNotificationCSV(dataList, 4096)
 	second, _ := BuildNotificationCSV(rest, 4096)
-
 	if expected != string(csv) {
 		t.Errorf("First pass mismatch.\nexpected:\n[%s]\n\nreceived:\n[%s]",
 			expected, string(csv))
@@ -127,28 +117,59 @@ func TestBuildNotificationCSV_small(t *testing.T) {
 	expected := `U4x/lrFkvxuXu59LtHLon1sUhPJSCcnZND6SugndnVI=,39ebTXZCm2F6DJ+fDTulWwzA1hRMiIU1hA==
 GsvgcJsHWAg/YdN1vAK0HfT5GSnhj9qeb4LlTnSOgec=,nku9b+NM3LqEPujWPoxP/hzr6lRtj6wT3Q==
 `
-
 	rng := rand.New(rand.NewSource(42))
-
-	const numNotifications = 2
-
-	notifList := make([]*Data, numNotifications)
-
-	for i := range notifList {
-		msgHash := make([]byte, 32)
-		ifp := make([]byte, 25)
-		rng.Read(msgHash)
-		rng.Read(ifp)
-		notifList[i] = &Data{MessageHash: msgHash, IdentityFP: ifp}
+	dataList := make([]*Data, 2)
+	for i := range dataList {
+		identityFP, messageHash := make([]byte, 25), make([]byte, 32)
+		rng.Read(messageHash)
+		rng.Read(identityFP)
+		dataList[i] = &Data{IdentityFP: identityFP, MessageHash: messageHash}
 	}
 
-	csv, rest := BuildNotificationCSV(notifList, 4096)
-
+	csv, rest := BuildNotificationCSV(dataList, 4096)
 	if expected != string(csv) {
 		t.Errorf("First pass mismatch.\nexpected:\n[%s]\n\nreceived:\n[%s]",
 			expected, string(csv))
 	}
 	if len(rest) != 0 {
 		t.Errorf("Should not have been any overflow, but got %+v", rest)
+	}
+}
+
+// Error path: Tests that DecodeNotificationsCSV returns the expected error for
+// an invalid MessageHash.
+func TestDecodeNotificationsCSV_InvalidMessageHashError(t *testing.T) {
+	invalidCSV := `U4x/lrFkvxuXu59LtHLonnZND6SugndnVI=,39ebTXZCm2F6DJ+fDTulWwzA1hRMiIU1hA==
+`
+	expectedErr := "Failed to decode MessageHash for record 0"
+	_, err := DecodeNotificationsCSV(invalidCSV)
+	if err == nil || !strings.Contains(err.Error(), expectedErr) {
+		t.Errorf("Unexpected error for invalid MessageHash."+
+			"\nexpected: %s\nreceived: %+v", expectedErr, err)
+	}
+}
+
+// Error path: Tests that DecodeNotificationsCSV returns the expected error for
+// an invalid identityFP.
+func TestDecodeNotificationsCSV_InvalididentityFPError(t *testing.T) {
+	invalidCSV := `U4x/lrFkvxuXu59LtHLon1sUhPJSCcnZND6SugndnVI=,39ebTXZCm2F6DJ1hRMiIU1hA==
+`
+	expectedErr := "Failed to decode IdentityFP for record 0"
+	_, err := DecodeNotificationsCSV(invalidCSV)
+	if err == nil || !strings.Contains(err.Error(), expectedErr) {
+		t.Errorf("Unexpected error for invalid identityFP."+
+			"\nexpected: %s\nreceived: %+v", expectedErr, err)
+	}
+}
+
+// Error path: Tests that DecodeNotificationsCSV returns the expected error for
+// an invalid identityFP.
+func TestDecodeNotificationsCSV_NoEofError(t *testing.T) {
+	invalidCSV := `U4x/lrFkvxuXu59LtHLon1sUhPJSCcnZND6SugndnVI=,39ebTXZCm2F6DJ+fDTulWwzA1hRMiIU1hA==,"`
+	expectedErr := "Failed to read record 0"
+	_, err := DecodeNotificationsCSV(invalidCSV)
+	if err == nil || !strings.Contains(err.Error(), expectedErr) {
+		t.Errorf("Unexpected error for invalid identityFP."+
+			"\nexpected: %s\nreceived: %+v", expectedErr, err)
 	}
 }

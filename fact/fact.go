@@ -15,8 +15,13 @@ import (
 	"github.com/ttacon/libphonenumber"
 )
 
-// maxFactCharacterLimit is the maximum character length of a fact.
-const maxFactCharacterLimit = 64
+const (
+	// The maximum character length of a fact.
+	maxFactLen = 64
+
+	// The minimum character length of a nickname.
+	minNicknameLen = 3
+)
 
 // Fact represents a piece of user-identifying information. This structure can
 // be JSON marshalled and unmarshalled.
@@ -36,9 +41,9 @@ type Fact struct {
 // fact type. If so, it returns a new fact object. If not, it returns a
 // validation error.
 func NewFact(ft FactType, fact string) (Fact, error) {
-	if len(fact) > maxFactCharacterLimit {
+	if len(fact) > maxFactLen {
 		return Fact{}, errors.Errorf("Fact (%s) exceeds maximum character limit"+
-			"for a fact (%d characters)", fact, maxFactCharacterLimit)
+			"for a fact (%d characters)", fact, maxFactLen)
 	}
 
 	f := Fact{
@@ -58,26 +63,23 @@ func (f Fact) Stringify() string {
 	return f.T.Stringify() + f.Fact
 }
 
-func (f Fact) Normalized() string {
-	return strings.ToUpper(f.Fact)
-}
-
+// UnstringifyFact unmarshalls the stringified fact into a Fact.
 func UnstringifyFact(s string) (Fact, error) {
 	if len(s) < 1 {
 		return Fact{}, errors.New("stringified facts must at least " +
 			"have a type at the start")
 	}
 
-	if len(s) > maxFactCharacterLimit {
+	if len(s) > maxFactLen {
 		return Fact{}, errors.Errorf("Fact (%s) exceeds maximum character limit"+
-			"for a fact (%d characters)", s, maxFactCharacterLimit)
+			"for a fact (%d characters)", s, maxFactLen)
 	}
 
 	T := s[:1]
 	fact := s[1:]
 	if len(fact) == 0 {
-		return Fact{}, errors.New("stringified facts must be at " +
-			"least 1 character long")
+		return Fact{}, errors.New(
+			"stringified facts must be at least 1 character long")
 	}
 	ft, err := UnstringifyFactType(T)
 	if err != nil {
@@ -86,6 +88,11 @@ func UnstringifyFact(s string) (Fact, error) {
 	}
 
 	return NewFact(ft, fact)
+}
+
+// Normalized returns the fact in all uppercase letters.
+func (f Fact) Normalized() string {
+	return strings.ToUpper(f.Fact)
 }
 
 // ValidateFact checks the fact to see if it valid based on its type.
@@ -160,9 +167,9 @@ func validateNumber(number, countryCode string) error {
 }
 
 func validateNickname(nickname string) error {
-	if len(nickname) < 3 {
+	if len(nickname) < minNicknameLen {
 		return errors.Errorf("Could not validate nickname %s: "+
-			"too short (< 3 characters)", nickname)
+			"too short (< %d characters)", nickname, minNicknameLen)
 	}
 	return nil
 }

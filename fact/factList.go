@@ -13,13 +13,14 @@ import (
 	"strings"
 )
 
-// FactList is a list of Fact. This type can be JSON marshalled and
+// FactList is a list of Fact objects. This type can be JSON marshalled and
 // unmarshalled.
 type FactList []Fact
 
 const factDelimiter = ","
 const factBreak = ";"
 
+// Stringify marshals the FactList into a portable string.
 func (fl FactList) Stringify() string {
 	stringList := make([]string, len(fl))
 	for index, f := range fl {
@@ -29,8 +30,8 @@ func (fl FactList) Stringify() string {
 	return strings.Join(stringList, factDelimiter) + factBreak
 }
 
-// UnstringifyFactList unstringifies facts followed by a facts break and with
-// arbitrary data attached at the end.
+// UnstringifyFactList unmarshalls the stringified FactList, which consists of
+// the fact list and optional arbitrary data, delimited by the factBreak.
 func UnstringifyFactList(s string) (FactList, string, error) {
 	parts := strings.SplitN(s, factBreak, 2)
 	if len(parts) != 2 {

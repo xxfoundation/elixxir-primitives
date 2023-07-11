@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-func TestMessage_Version(t *testing.T) {
+func TestMessage_VersionDetection(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 
 	// Generate message parts
@@ -175,6 +175,23 @@ func TestMessage_Marshal_UnmarshalImmutable(t *testing.T) {
 	if newMsg.sih[0] != 0 {
 		t.Errorf("MarshalImmutable did not clear SIH: %v != 0",
 			newMsg.sih)
+	}
+}
+
+// Happy path.
+func TestMessage_Version(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
+
+	if msg.Version() != 0 {
+		t.Errorf("Unexpected version for new Message."+
+			"\nexpected: %d\nreceived: %d", 0, msg.Version())
+	}
+
+	copy(msg.version, []byte{123})
+
+	if msg.Version() != 123 {
+		t.Errorf("Unexpected version."+
+			"\nexpected: %d\nreceived: %d", 123, msg.Version())
 	}
 }
 

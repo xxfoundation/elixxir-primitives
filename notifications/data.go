@@ -11,9 +11,10 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/csv"
+	"strings"
+
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
-	"strings"
 )
 
 type Data struct {
@@ -24,14 +25,14 @@ type Data struct {
 }
 
 func BuildNotificationCSV(ndList []*Data, maxSize int) ([]byte, []*Data) {
-	buf := &bytes.Buffer{}
-
-	numWritten := 0
+	var buf bytes.Buffer
+	var numWritten int
 
 	for _, nd := range ndList {
-		line := &bytes.Buffer{}
-		w := csv.NewWriter(line)
-		output := []string{base64.StdEncoding.EncodeToString(nd.MessageHash),
+		var line bytes.Buffer
+		w := csv.NewWriter(&line)
+		output := []string{
+			base64.StdEncoding.EncodeToString(nd.MessageHash),
 			base64.StdEncoding.EncodeToString(nd.IdentityFP)}
 
 		if err := w.Write(output); err != nil {
@@ -61,12 +62,12 @@ func DecodeNotificationsCSV(data string) ([]*Data, error) {
 	}
 
 	l := make([]*Data, len(read))
-	for i, touple := range read {
-		messageHash, err := base64.StdEncoding.DecodeString(touple[0])
+	for i, tuple := range read {
+		messageHash, err := base64.StdEncoding.DecodeString(tuple[0])
 		if err != nil {
 			return nil, errors.WithMessage(err, "Failed decode an element")
 		}
-		identityFP, err := base64.StdEncoding.DecodeString(touple[1])
+		identityFP, err := base64.StdEncoding.DecodeString(tuple[1])
 		if err != nil {
 			return nil, errors.WithMessage(err, "Failed decode an element")
 		}
