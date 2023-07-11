@@ -8,7 +8,8 @@
 package fact
 
 import (
-	"fmt"
+	"strconv"
+
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
 )
@@ -35,7 +36,7 @@ func (t FactType) String() string {
 	case Nickname:
 		return "Nickname"
 	default:
-		return fmt.Sprintf("Unknown Fact FactType: %d", t)
+		return "Unknown Fact FactType: " + strconv.FormatUint(uint64(t), 10)
 	}
 }
 

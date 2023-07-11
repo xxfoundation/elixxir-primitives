@@ -14,9 +14,10 @@
 package version
 
 import (
-	"github.com/pkg/errors"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // String version delimiter

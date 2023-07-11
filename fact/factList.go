@@ -8,9 +8,10 @@
 package fact
 
 import (
+	"strings"
+
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
-	"strings"
 )
 
 // FactList is a list of Fact objects. This type can be JSON marshalled and

@@ -10,9 +10,11 @@
 package excludedRounds
 
 import (
-	"github.com/golang-collections/collections/set"
-	"gitlab.com/xx_network/primitives/id"
 	"sync"
+
+	"github.com/golang-collections/collections/set"
+
+	"gitlab.com/xx_network/primitives/id"
 )
 
 // Set struct contains a set of rounds to be excluded from cmix

@@ -87,14 +87,14 @@ func DecodeNotificationsCSV(data string) ([]*Data, error) {
 		messageHash, err := base64.StdEncoding.DecodeString(tuple[0])
 		if err != nil {
 			return nil, errors.Wrapf(err,
-				"Failed to decode MessageHash on record %d of %d",
+				"Failed to decode MessageHash for record %d of %d",
 				i, len(records))
 		}
 
 		identityFP, err := base64.StdEncoding.DecodeString(tuple[1])
 		if err != nil {
 			return nil, errors.Wrapf(err,
-				"Failed to decode IdentityFP on record %d of %d",
+				"Failed to decode IdentityFP for record %d of %d",
 				i, len(records))
 		}
 		list[i] = &Data{

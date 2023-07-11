@@ -8,8 +8,9 @@
 package current
 
 import (
-	"github.com/pkg/errors"
 	"strconv"
+
+	"github.com/pkg/errors"
 
 	"gitlab.com/elixxir/primitives/states"
 )
