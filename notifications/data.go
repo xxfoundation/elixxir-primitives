@@ -13,6 +13,8 @@ import (
 	"encoding/csv"
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
+	"io"
+	"strconv"
 	"strings"
 )
 
@@ -23,19 +25,37 @@ type Data struct {
 	MessageHash []byte
 }
 
+func (d *Data) String() string {
+	fields := []string{
+		strconv.FormatInt(d.EphemeralID, 10),
+		strconv.FormatUint(d.RoundID, 10),
+		base64.StdEncoding.EncodeToString(d.IdentityFP),
+		base64.StdEncoding.EncodeToString(d.MessageHash),
+	}
+	return "{" + strings.Join(fields, " ") + "}"
+}
+
+// BuildNotificationCSV converts the [Data] list into a CSV of the specified max
+// size and return it along with the included [Data] entries. Any [Data] entries
+// over that size are excluded.
+//
+// The CSV contains each [Data] entry on its own row with column one the
+// [Data.MessageHash] and column two having the [Data.IdentityFP], but base 64
+// encoded
 func BuildNotificationCSV(ndList []*Data, maxSize int) ([]byte, []*Data) {
-	buf := &bytes.Buffer{}
+	var buf bytes.Buffer
+	var numWritten int
 
-	numWritten := 0
-
-	for _, nd := range ndList {
-		line := &bytes.Buffer{}
-		w := csv.NewWriter(line)
-		output := []string{base64.StdEncoding.EncodeToString(nd.MessageHash),
+	for i, nd := range ndList {
+		var line bytes.Buffer
+		w := csv.NewWriter(&line)
+		output := []string{
+			base64.StdEncoding.EncodeToString(nd.MessageHash),
 			base64.StdEncoding.EncodeToString(nd.IdentityFP)}
 
 		if err := w.Write(output); err != nil {
-			jww.FATAL.Printf("Failed to write notificationsCSV line: %+v", err)
+			jww.FATAL.Printf("Failed to write record %d of %d to "+
+				"notifications CSV line buffer: %+v", i, len(ndList), err)
 		}
 		w.Flush()
 
@@ -44,7 +64,8 @@ func BuildNotificationCSV(ndList []*Data, maxSize int) ([]byte, []*Data) {
 		}
 
 		if _, err := buf.Write(line.Bytes()); err != nil {
-			jww.FATAL.Printf("Failed to write to notificationsCSV: %+v", err)
+			jww.FATAL.Printf("Failed to write record %d of %d to "+
+				"notifications CSV: %+v", i, len(ndList), err)
 		}
 
 		numWritten++
@@ -53,28 +74,35 @@ func BuildNotificationCSV(ndList []*Data, maxSize int) ([]byte, []*Data) {
 	return buf.Bytes(), ndList[numWritten:]
 }
 
+// DecodeNotificationsCSV decodes the Data list CSV into a slice of Data.
 func DecodeNotificationsCSV(data string) ([]*Data, error) {
 	r := csv.NewReader(strings.NewReader(data))
-	read, err := r.ReadAll()
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to decode notifications CSV")
-	}
 
-	l := make([]*Data, len(read))
-	for i, touple := range read {
-		messageHash, err := base64.StdEncoding.DecodeString(touple[0])
+	var l []*Data
+	var i int
+	tuple, err := r.Read()
+	for ; err == nil; tuple, err = r.Read() {
+		messageHash, err := base64.StdEncoding.DecodeString(tuple[0])
 		if err != nil {
-			return nil, errors.WithMessage(err, "Failed decode an element")
+			return nil, errors.Wrapf(err,
+				"Failed to decode MessageHash for record %d", i)
 		}
-		identityFP, err := base64.StdEncoding.DecodeString(touple[1])
+
+		identityFP, err := base64.StdEncoding.DecodeString(tuple[1])
 		if err != nil {
-			return nil, errors.WithMessage(err, "Failed decode an element")
+			return nil, errors.Wrapf(err,
+				"Failed to decode IdentityFP for record %d", i)
 		}
-		l[i] = &Data{
-			EphemeralID: 0,
+		l = append(l, &Data{
 			IdentityFP:  identityFP,
 			MessageHash: messageHash,
-		}
+		})
+		i++
 	}
+
+	if err != nil && err != io.EOF {
+		return nil, errors.Wrapf(err, "Failed to read record %d", i)
+	}
+
 	return l, nil
 }

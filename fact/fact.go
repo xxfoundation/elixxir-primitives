@@ -15,8 +15,13 @@ import (
 	"github.com/ttacon/libphonenumber"
 )
 
-// maxFactCharacterLimit is the maximum character length of a fact.
-const maxFactCharacterLimit = 64
+const (
+	// The maximum character length of a fact.
+	maxFactLen = 64
+
+	// The minimum character length of a nickname.
+	minNicknameLen = 3
+)
 
 // Fact represents a piece of user-identifying information. This structure can
 // be JSON marshalled and unmarshalled.
@@ -36,9 +41,9 @@ type Fact struct {
 // fact type. If so, it returns a new fact object. If not, it returns a
 // validation error.
 func NewFact(ft FactType, fact string) (Fact, error) {
-	if len(fact) > maxFactCharacterLimit {
-		return Fact{}, errors.Errorf("Fact (%s) exceeds maximum character limit"+
-			"for a fact (%d characters)", fact, maxFactCharacterLimit)
+	if len(fact) > maxFactLen {
+		return Fact{}, errors.Errorf("Fact (%s) exceeds maximum character "+
+			"limit for a fact (%d characters)", fact, maxFactLen)
 	}
 
 	f := Fact{
@@ -58,26 +63,23 @@ func (f Fact) Stringify() string {
 	return f.T.Stringify() + f.Fact
 }
 
-func (f Fact) Normalized() string {
-	return strings.ToUpper(f.Fact)
-}
-
+// UnstringifyFact unmarshalls the stringified fact into a Fact.
 func UnstringifyFact(s string) (Fact, error) {
 	if len(s) < 1 {
 		return Fact{}, errors.New("stringified facts must at least " +
 			"have a type at the start")
 	}
 
-	if len(s) > maxFactCharacterLimit {
-		return Fact{}, errors.Errorf("Fact (%s) exceeds maximum character limit"+
-			"for a fact (%d characters)", s, maxFactCharacterLimit)
+	if len(s) > maxFactLen {
+		return Fact{}, errors.Errorf("Fact (%s) exceeds maximum character "+
+			"limit for a fact (%d characters)", s, maxFactLen)
 	}
 
 	T := s[:1]
 	fact := s[1:]
 	if len(fact) == 0 {
-		return Fact{}, errors.New("stringified facts must be at " +
-			"least 1 character long")
+		return Fact{}, errors.New(
+			"stringified facts must be at least 1 character long")
 	}
 	ft, err := UnstringifyFactType(T)
 	if err != nil {
@@ -86,6 +88,11 @@ func UnstringifyFact(s string) (Fact, error) {
 	}
 
 	return NewFact(ft, fact)
+}
+
+// Normalized returns the fact in all uppercase letters.
+func (f Fact) Normalized() string {
+	return strings.ToUpper(f.Fact)
 }
 
 // ValidateFact checks the fact to see if it valid based on its type.
@@ -104,7 +111,7 @@ func ValidateFact(fact Fact) error {
 	case Nickname:
 		return validateNickname(fact.Fact)
 	default:
-		return errors.Errorf("Unknown fact type: %v", fact.T)
+		return errors.Errorf("Unknown fact type: %d", fact.T)
 	}
 }
 
@@ -123,8 +130,7 @@ func extractNumberInfo(fact string) (number, countryCode string) {
 func validateEmail(email string) error {
 	// Check that the input is validly formatted
 	if err := checkmail.ValidateFormat(email); err != nil {
-		return errors.Errorf(
-			"Could not validate format for email [%s]: %v", email, err)
+		return errors.Wrapf(err, "Could not validate format for email %q", email)
 	}
 
 	return nil
@@ -133,36 +139,38 @@ func validateEmail(email string) error {
 // Checks if the number and country code passed in is parse-able
 // and is a valid phone number with that information
 func validateNumber(number, countryCode string) error {
-	errCh := make(chan error)
-
-	go func() {
+	catchPanic := func(number, countryCode string) (err error) {
 		defer func() {
 			if r := recover(); r != nil {
-				errCh <- errors.Errorf("Crash occured on phone "+
-					"validation of: number: %s, country code: %s", number,
-					countryCode)
+				err = errors.Errorf("Crash occured on phone validation of: "+
+					"number: %s, country code: %s: %+v", number, countryCode, r)
 			}
 		}()
 
 		if len(number) == 0 || len(countryCode) == 0 {
-			errCh <- errors.New("Number or input are of length 0")
+			err = errors.New("Number or input are of length 0")
+			return err
 		}
 		num, err := libphonenumber.Parse(number, countryCode)
 		if err != nil || num == nil {
-			errCh <- errors.Errorf("Could not parse number [%s]: %v", number, err)
+			err = errors.Wrapf(err, "Could not parse number %q", number)
+			return err
 		}
 		if !libphonenumber.IsValidNumber(num) {
-			errCh <- errors.Errorf("Could not validate number [%s]: %v", number, err)
+			err = errors.Errorf("Could not validate number %q", number)
+			return err
 		}
-		errCh <- nil
-	}()
-	return <-errCh
+
+		return nil
+	}
+
+	return catchPanic(number, countryCode)
 }
 
 func validateNickname(nickname string) error {
-	if len(nickname) < 3 {
+	if len(nickname) < minNicknameLen {
 		return errors.Errorf("Could not validate nickname %s: "+
-			"too short (< 3 characters)", nickname)
+			"too short (< %d characters)", nickname, minNicknameLen)
 	}
 	return nil
 }

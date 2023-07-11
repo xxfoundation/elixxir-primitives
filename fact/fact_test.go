@@ -9,7 +9,9 @@ package fact
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -20,7 +22,7 @@ func TestNewFact(t *testing.T) {
 		fact     string
 		expected Fact
 	}{
-		{Username, "muUsername", Fact{"muUsername", Username}},
+		{Username, "myUsername", Fact{"myUsername", Username}},
 		{Email, "email@example.com", Fact{"email@example.com", Email}},
 		{Phone, "8005559486US", Fact{"8005559486US", Phone}},
 		{Nickname, "myNickname", Fact{"myNickname", Nickname}},
@@ -38,7 +40,7 @@ func TestNewFact(t *testing.T) {
 }
 
 // Error path: Tests that NewFact returns error when a fact exceeds the
-// maxFactCharacterLimit.
+// maxFactLen.
 func TestNewFact_ExceedMaxFactError(t *testing.T) {
 	_, err := NewFact(Email,
 		"devinputvalidation_devinputvalidation_devinputvalidation@elixxir.io")
@@ -49,11 +51,19 @@ func TestNewFact_ExceedMaxFactError(t *testing.T) {
 
 }
 
+// Error path: Tests that NewFact returns error when the fact is not valid.
+func TestNewFact_InvalidFactError(t *testing.T) {
+	_, err := NewFact(Nickname, "hi")
+	if err == nil {
+		t.Fatal("Expected error when the fact is invalid.")
+	}
+}
+
 // Tests that a Fact marshalled by Fact.Stringify and unmarshalled by
 // UnstringifyFact matches the original.
 func TestFact_Stringify_UnstringifyFact(t *testing.T) {
 	facts := []Fact{
-		{"muUsername", Username},
+		{"myUsername", Username},
 		{"email@example.com", Email},
 		{"8005559486US", Phone},
 		{"myNickname", Nickname},
@@ -79,7 +89,7 @@ func TestFact_Stringify(t *testing.T) {
 		fact     Fact
 		expected string
 	}{
-		{Fact{"muUsername", Username}, "UmuUsername"},
+		{Fact{"myUsername", Username}, "UmyUsername"},
 		{Fact{"email@example.com", Email}, "Eemail@example.com"},
 		{Fact{"8005559486US", Phone}, "P8005559486US"},
 		{Fact{"myNickname", Nickname}, "NmyNickname"},
@@ -102,7 +112,7 @@ func TestUnstringifyFact(t *testing.T) {
 		factString string
 		expected   Fact
 	}{
-		{"UmuUsername", Fact{"muUsername", Username}},
+		{"UmyUsername", Fact{"myUsername", Username}},
 		{"Eemail@example.com", Fact{"email@example.com", Email}},
 		{"P8005559486US", Fact{"8005559486US", Phone}},
 		{"NmyNickname", Fact{"myNickname", Nickname}},
@@ -121,10 +131,55 @@ func TestUnstringifyFact(t *testing.T) {
 	}
 }
 
+// Error path: Tests all error paths of UnstringifyFact.
+func TestUnstringifyFact_Error(t *testing.T) {
+	longFact := strings.Repeat("A", maxFactLen+1)
+	tests := []struct {
+		factString  string
+		expectedErr string
+	}{
+		{"", "stringified facts must at least have a type at the start"},
+		{longFact, fmt.Sprintf("Fact (%s) exceeds maximum character limit for "+
+			"a fact (%d characters)", longFact, maxFactLen)},
+		{"P", "stringified facts must be at least 1 character long"},
+		{"QA", `Failed to unstringify fact type for "QA"`},
+	}
+
+	for i, tt := range tests {
+		_, err := UnstringifyFact(tt.factString)
+		if err == nil || !strings.Contains(err.Error(), tt.expectedErr) {
+			t.Errorf("Unexpected error when Unstringifying fact %q (%d)."+
+				"\nexpected: %s\nreceived: %+v",
+				tt.factString, i, tt.expectedErr, err)
+		}
+	}
+}
+
+// Consistency test of Fact.Normalized.
+func TestFact_Normalized(t *testing.T) {
+	tests := []struct {
+		fact     Fact
+		expected string
+	}{
+		{Fact{"myUsername", Username}, "MYUSERNAME"},
+		{Fact{"email@example.com", Email}, "EMAIL@EXAMPLE.COM"},
+		{Fact{"8005559486US", Phone}, "8005559486US"},
+		{Fact{"myNickname", Nickname}, "MYNICKNAME"},
+	}
+
+	for i, tt := range tests {
+		normal := tt.fact.Normalized()
+		if normal != tt.expected {
+			t.Errorf("Unexpected new normalized Fact %v (%d)."+
+				"\nexpected: %q\nreceived: %q", tt.fact, i, tt.expected, normal)
+		}
+	}
+}
+
 // Tests that ValidateFact correctly validates various facts.
 func TestValidateFact(t *testing.T) {
 	facts := []Fact{
-		{"muUsername", Username},
+		{"myUsername", Username},
 		{"email@example.com", Email},
 		{"8005559486US", Phone},
 		{"myNickname", Nickname},
@@ -146,6 +201,7 @@ func TestValidateFact_InvalidFactsError(t *testing.T) {
 		{"US8005559486", Phone},
 		{"020 8743 8000135UK", Phone},
 		{"me", Nickname},
+		{"me", 99},
 	}
 
 	for i, fact := range facts {
@@ -156,10 +212,33 @@ func TestValidateFact_InvalidFactsError(t *testing.T) {
 	}
 }
 
+// Error path: Tests all error paths of validateNumber.
+func Test_validateNumber_Error(t *testing.T) {
+	tests := []struct {
+		number, countryCode string
+		expectedErr         string
+	}{
+		{"5", "", "Number or input are of length 0"},
+		{"", "US", "Number or input are of length 0"},
+		// {"020 8743 8000135", "UK", `Could not parse number "020 8743 8000135"`},
+		{"8005559486", "UK", `Could not parse number "8005559486"`},
+		{"+343511234567", "ES", `Could not validate number "+343511234567"`},
+	}
+
+	for i, tt := range tests {
+		err := validateNumber(tt.number, tt.countryCode)
+		if err == nil || !strings.Contains(err.Error(), tt.expectedErr) {
+			t.Errorf("Unexpected error when validating number %q with country "+
+				"code %q (%d).\nexpected: %s\nreceived: %+v",
+				tt.number, tt.countryCode, i, tt.expectedErr, err)
+		}
+	}
+}
+
 // Tests that a Fact JSON marshalled and unmarshalled matches the original.
 func TestFact_JsonMarshalUnmarshal(t *testing.T) {
 	facts := []Fact{
-		{"muUsername", Username},
+		{"myUsername", Username},
 		{"email@example.com", Email},
 		{"8005559486US", Phone},
 		{"myNickname", Nickname},
