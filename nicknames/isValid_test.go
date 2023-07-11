@@ -23,10 +23,10 @@ func TestIsNicknameValid(t *testing.T) {
 
 		if err := IsValid(nick); err != nil &&
 			!errors.Is(err, ErrNicknameTooShort) {
-			t.Errorf("Wrong error returned from nicknames.IsValid() "+
+			t.Errorf("Wrong error returned from nicknames.IsValid "+
 				"with too short input of length %d: %+v", i, err)
 		} else if err == nil {
-			t.Errorf("No error returned from nicknames.IsValid() "+
+			t.Errorf("No error returned from nicknames.IsValid "+
 				"with too short input of length %d", i)
 		}
 	}
@@ -37,10 +37,10 @@ func TestIsNicknameValid(t *testing.T) {
 
 		if err := IsValid(nick); err != nil &&
 			!errors.Is(err, ErrNicknameTooLong) {
-			t.Errorf("Wrong error returned from nicknames.IsValid() "+
+			t.Errorf("Wrong error returned from nicknames.IsValid "+
 				"with too long input of length %d: %+v", i, err)
 		} else if err == nil {
-			t.Errorf("No error returned from nicknames.IsValid() "+
+			t.Errorf("No error returned from nicknames.IsValid "+
 				"with too long input of length %d", i)
 		}
 	}
@@ -49,7 +49,7 @@ func TestIsNicknameValid(t *testing.T) {
 	for i := MinNicknameLength; i <= MaxNicknameLength; i++ {
 		nick := nicknameSource[:i]
 		if err := IsValid(nick); err != nil {
-			t.Errorf("Error returned from nicknames.IsValid() "+
+			t.Errorf("Error returned from nicknames.IsValid "+
 				"with valid nickname of input of length %d: %+v", i, err)
 		}
 	}
