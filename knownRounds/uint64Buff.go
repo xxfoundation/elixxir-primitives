@@ -10,10 +10,11 @@ package knownRounds
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/pkg/errors"
-	jww "github.com/spf13/jwalterweatherman"
 	"io"
 	"math"
+
+	"github.com/pkg/errors"
+	jww "github.com/spf13/jwalterweatherman"
 )
 
 const (

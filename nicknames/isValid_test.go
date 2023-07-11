@@ -1,8 +1,9 @@
 package nicknames
 
 import (
-	"github.com/pkg/errors"
 	"testing"
+
+	"github.com/pkg/errors"
 )
 
 const nicknameSource = "Sodium, atomic number 11, was first isolated by " +
