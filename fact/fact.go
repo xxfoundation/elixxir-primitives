@@ -42,8 +42,8 @@ type Fact struct {
 // validation error.
 func NewFact(ft FactType, fact string) (Fact, error) {
 	if len(fact) > maxFactLen {
-		return Fact{}, errors.Errorf("Fact (%s) exceeds maximum character "+
-			"limit for a fact (%d characters)", fact, maxFactLen)
+		return Fact{}, errors.Errorf("Fact (%s) exceeds maximum character limit " +
+			"for a fact (%d characters)", fact, maxFactLen)
 	}
 
 	f := Fact{
@@ -71,8 +71,8 @@ func UnstringifyFact(s string) (Fact, error) {
 	}
 
 	if len(s) > maxFactLen {
-		return Fact{}, errors.Errorf("Fact (%s) exceeds maximum character "+
-			"limit for a fact (%d characters)", s, maxFactLen)
+		return Fact{}, errors.Errorf("Fact (%s) exceeds maximum character limit " +
+			"for a fact (%d characters)", s, maxFactLen)
 	}
 
 	T := s[:1]

@@ -8,7 +8,6 @@
 package fact
 
 import (
-	"reflect"
 	"testing"
 )
 
@@ -48,7 +47,7 @@ func TestFactType_Stringify_UnstringifyFactType(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to unstringify fact type %q: %+v", str, err)
 		}
-		if !reflect.DeepEqual(expected, ft) {
+		if expected != ft {
 			t.Errorf("Unexpected unstringified FactType."+
 				"\nexpected: %s\nreceived: %s", expected, str)
 		}

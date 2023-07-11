@@ -11,11 +11,11 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/csv"
-	"github.com/pkg/errors"
-	jww "github.com/spf13/jwalterweatherman"
-	"io"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
+	jww "github.com/spf13/jwalterweatherman"
 )
 
 type Data struct {
@@ -77,32 +77,31 @@ func BuildNotificationCSV(ndList []*Data, maxSize int) ([]byte, []*Data) {
 // DecodeNotificationsCSV decodes the Data list CSV into a slice of Data.
 func DecodeNotificationsCSV(data string) ([]*Data, error) {
 	r := csv.NewReader(strings.NewReader(data))
+	records, err := r.ReadAll()
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to read notifications CSV records.")
+	}
 
-	var l []*Data
-	var i int
-	tuple, err := r.Read()
-	for ; err == nil; tuple, err = r.Read() {
+	list := make([]*Data, len(records))
+	for i, tuple := range records {
 		messageHash, err := base64.StdEncoding.DecodeString(tuple[0])
 		if err != nil {
 			return nil, errors.Wrapf(err,
-				"Failed to decode MessageHash for record %d", i)
+				"Failed to decode MessageHash on record %d of %d",
+				i, len(records))
 		}
 
 		identityFP, err := base64.StdEncoding.DecodeString(tuple[1])
 		if err != nil {
 			return nil, errors.Wrapf(err,
-				"Failed to decode IdentityFP for record %d", i)
+				"Failed to decode IdentityFP on record %d of %d",
+				i, len(records))
 		}
-		l = append(l, &Data{
+		list[i] = &Data{
 			IdentityFP:  identityFP,
 			MessageHash: messageHash,
-		})
-		i++
+		}
 	}
 
-	if err != nil && err != io.EOF {
-		return nil, errors.Wrapf(err, "Failed to read record %d", i)
-	}
-
-	return l, nil
+	return list, nil
 }
