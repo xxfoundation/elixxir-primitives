@@ -8,7 +8,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/jwalterweatherman v1.1.0
 	github.com/ttacon/libphonenumber v1.2.1
-	gitlab.com/xx_network/primitives v0.0.4-0.20230718205622-e7efa06fc33a
+	gitlab.com/xx_network/primitives v0.0.4-0.20230718211916-dc1775b65941
 	golang.org/x/crypto v0.5.0
 )
 
