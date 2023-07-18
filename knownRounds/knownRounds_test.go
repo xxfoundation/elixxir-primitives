@@ -10,12 +10,13 @@ package knownRounds
 import (
 	"bytes"
 	"fmt"
-	"gitlab.com/xx_network/primitives/id"
 	"math"
 	"math/rand"
 	"reflect"
 	"strings"
 	"testing"
+
+	"gitlab.com/xx_network/primitives/id"
 )
 
 // Tests happy path of NewKnownRound.

@@ -8,8 +8,9 @@
 package excludedRounds
 
 import (
-	"gitlab.com/xx_network/primitives/id"
 	"testing"
+
+	"gitlab.com/xx_network/primitives/id"
 )
 
 func TestSet(t *testing.T) {

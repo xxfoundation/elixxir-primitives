@@ -9,6 +9,7 @@ package fact
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
 )

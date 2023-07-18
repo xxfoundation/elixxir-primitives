@@ -11,8 +11,9 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
-	"golang.org/x/crypto/blake2b"
 	"strconv"
+
+	"golang.org/x/crypto/blake2b"
 
 	jww "github.com/spf13/jwalterweatherman"
 )
